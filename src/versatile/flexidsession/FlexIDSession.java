@@ -98,14 +98,16 @@ public class FlexIDSession implements Serializable {
 
 		FlexID sFID = new FlexID();
 		Locator sLoc = new Locator(InterfaceType.WIFI, sock.getInetAddress().toString(), sock.getPort());
+		System.out.println("Source IP Address: " + sock.getInetAddress().toString() + " / Port: " + sock.getPort());
 		sFID.setIdentity("5555".getBytes());
 		sFID.setLocator(sLoc);
 
 		FlexID dFID = new FlexID();
 		Locator dLoc = new Locator(InterfaceType.ETH, server.getInetAddress().toString(), server.getPort());
+		System.out.println("Destination IP Address: " + server.getInetAddress().toString() + " / Port: " + server.getPort());
 		dFID.setIdentity("1111".getBytes());
 		dFID.setLocator(dLoc);
-		
+
 		return new FlexIDSession(sFID, dFID, sock);
 	}
 

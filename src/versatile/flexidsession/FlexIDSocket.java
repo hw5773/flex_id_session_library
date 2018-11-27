@@ -97,4 +97,12 @@ public class FlexIDSocket {
 			e.printStackTrace();
 		}
 	}
+
+	public InetAddress getInetAddress() {
+		return socket.getInetAddress();
+	}
+
+	public int getPort() {
+		return socket.getPort();
+	}
 }

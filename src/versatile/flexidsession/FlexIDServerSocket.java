@@ -52,4 +52,12 @@ public class FlexIDServerSocket {
 			e.printStackTrace();
 		}
 	}
+
+	public InetAddress getInetAddress() {
+		return server.getInetAddress();
+	}
+
+	public int getPort() {
+		return server.getLocalPort();
+	}
 }
