@@ -1,6 +1,6 @@
 package versatile.flexidsession;
 
-import versatile.flexid.FlexID;
+import versatile.flexid.*;
 
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -93,10 +93,18 @@ public class FlexIDSession implements Serializable {
 			System.out.println("accept failed.");
 			return null;
 		}
-		
+
 		System.out.println("Connected.");
+
 		FlexID sFID = new FlexID();
+		Locator sLoc = new Locator(InterfaceType.WIFI, sock.getInetAddress().toString(), sock.getPort());
+		sFID.setIdentity("5555".getBytes());
+		sFID.setLocator(sLoc);
+
 		FlexID dFID = new FlexID();
+		Locator dLoc = new Locator(InterfaceType.ETH, server.getInetAddress().toString(), server.getPort());
+		dFID.setIdentity("1111".getBytes());
+		dFID.setLocator(dLoc);
 		
 		return new FlexIDSession(sFID, dFID, sock);
 	}
