@@ -3,9 +3,13 @@ package versatile.flexidsession;
 import versatile.flexid.FlexID;
 
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Enumeration;
 
 /**
  * FlexID socket
@@ -146,12 +150,66 @@ public class FlexIDSession implements Serializable {
 		
 		return null;
 	}
-	
+
+	private class MobilityManager {
+		boolean checkAddress(FlexID id) {
+			boolean ret = false;
+			String ip = "";
+
+			while (ip.equals("")) {
+				ip = getLocalIpAddress();
+			}
+
+			System.out.println("Previous IP Address: " + id.getLocator().getAddr());
+			System.out.println("Current IP Address: " + ip);
+
+			if (id.getLocator().getAddr().equals(ip)) {
+				ret = true;
+				System.out.println("The IP Address is not changed.");
+			} else {
+				ret = false;
+				System.out.println("The IP Address is changed.");
+			}
+
+			return ret;
+		}
+
+		String getLocalIpAddress() {
+			String ip = "";
+
+			try {
+				Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface.getNetworkInterfaces();
+
+				while (enumNetworkInterfaces.hasMoreElements()) {
+					NetworkInterface networkInterface = enumNetworkInterfaces.nextElement();
+					Enumeration<InetAddress> enumInetAddress = networkInterface.getInetAddresses();
+
+					while (enumInetAddress.hasMoreElements()) {
+						InetAddress inetAddress = enumInetAddress.nextElement();
+
+						if (inetAddress.isSiteLocalAddress()) {
+							ip = inetAddress.getHostAddress();
+						}
+					}
+				}
+			} catch (SocketException e) {
+				e.printStackTrace();
+			}
+
+			return ip;
+		}
+	}
+
 	private class inbound implements Runnable {
 		public void run() {
+			MobilityManager mm = new MobilityManager();
 			try {
 				while(!inThread.isInterrupted()) {
-					// checkAddress();	// TODO
+
+					if (mm.checkAddress(SFID)) {
+						socket = new FlexIDSocket(DFID);
+					}
+
 					byte[] message;
 					if(lock != 1) {
 						lock = 1;
