@@ -14,7 +14,7 @@ import java.util.Arrays;
 public class FlexIDSession implements Serializable {
 	// mckwak: getter/setter, Serializable interface
 	private static final long serialVersionUID = 1L;
-	private static final int port = 3335;
+	private static int port = 3335;
 	int lock = 0;
 
 	private FlexID SFID; // source FlexID
@@ -68,6 +68,10 @@ public class FlexIDSession implements Serializable {
 	}
 	public FlexIDSession(FlexID sFID, FlexID dFID) {
 		this(sFID, dFID, null);
+	}
+	public static void mobility() {
+		port = 3336; // change port.
+		accept();	
 	}
 	public static FlexIDSession accept() {
 		FlexIDServerSocket server = new FlexIDServerSocket(port);
