@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="FlexIDSession:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/FlexIDSession_jar</output-path>
+    <root id="archive" name="FlexIDSession.jar">
+      <element id="module-output" name="FlexIDSession" />
+    </root>
+  </artifact>
+</component>
