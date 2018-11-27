@@ -71,11 +71,19 @@ public class FlexIDSession implements Serializable {
 	}
 	public static void mobility() {
 		port = 3336; // change port.
-		accept();	
+		FlexIDServerSocket server = new FlexIDServerSocket(port);
+		System.out.println("Server waits a reconnection.");
+		FlexIDSocket sock = server.accept();
+		if(sock == null) {
+			System.out.println("accept failed.");
+		}
+		else {
+			System.out.println("ReConnected.");
+		}
 	}
 	public static FlexIDSession accept() {
 		FlexIDServerSocket server = new FlexIDServerSocket(port);
-		System.out.println("Server waits a connections.");
+		System.out.println("Server waits a connection.");
 		FlexIDSocket sock = server.accept();
 		if(sock == null) {
 			System.out.println("accept failed.");
@@ -133,7 +141,7 @@ public class FlexIDSession implements Serializable {
 			if(message != null) return message;
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.exit(0);
+//			System.exit(0);
 		}
 		
 		return null;
@@ -193,7 +201,7 @@ public class FlexIDSession implements Serializable {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-				System.exit(0);
+//				System.exit(0);
 			} finally {
 				lock = 0;
 			}
@@ -246,7 +254,7 @@ public class FlexIDSession implements Serializable {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-				System.exit(0);
+//				System.exit(0);
 			} finally {
 				lock = 0;
 			}
