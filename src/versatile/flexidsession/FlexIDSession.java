@@ -34,6 +34,7 @@ public class FlexIDSession implements Serializable {
 	private int server;
 	private boolean changed = false;
 	private boolean ready = false;
+    private boolean retransmission = false;
 
 	// managed at the inbound, outbound function.
 	private int sentSEQ; // SEQ of my data
@@ -93,13 +94,14 @@ public class FlexIDSession implements Serializable {
 		this(sFID, dFID, null);
 	}
 	public void mobility() {
-		port = 3336; // change port.
+		port = 3337; // change port.
 		FlexIDServerSocket server = new FlexIDServerSocket(port);
 		System.out.println("Server waits a reconnection.");
 		// socket.close();
 
 		socket = server.accept();
 		System.out.println("ReConnected.");
+		retransmission = true;
 	}
 	public static FlexIDSession accept() {
 		FlexIDServerSocket server = new FlexIDServerSocket(port);
@@ -166,20 +168,22 @@ public class FlexIDSession implements Serializable {
 	// Polling: To get msg from socket. Then write to the rbuf.
 	public byte[] getRecvMsg() {
 		try {
-			System.out.println("getRecvMsg()");
-			byte[] message = socket.read(); // is it block?
+			//System.out.println("getRecvMsg()");
+            byte[] message = null;
+            if (socket != null)
+			    message = socket.read(); // is it block?
 			
 			if(message != null) {
 				System.out.println("Received) " + message.length + "  sentSEQ) " + sentSEQ + "  sentACK) " + sentACK + "  recvSEQ) " + recvSEQ + "  recvACK) " + recvACK);
 				return message;
 			}
 		} catch (Exception e) {
-			System.out.println("error in getRecvMsg()");
+			//System.out.println("error in getRecvMsg()");
 			e.printStackTrace();
 //			System.exit(0);
 		}
 
-		System.out.println("Received) -1");
+		//System.out.println("Received) -1");
 		return null;
 	}
 
@@ -243,6 +247,7 @@ public class FlexIDSession implements Serializable {
 				ret = true;
 				System.out.println("The IP Address is changed.");
 				while (ready == false) {}
+				id.getLocator().setAddr(getLocalIpAddress());
 				changeWifiThread = new ChangeWifiThread();
 				changeWifiThread.start();
 			}
@@ -356,7 +361,7 @@ public class FlexIDSession implements Serializable {
 		public void run() {
 			try {
 				byte[] message = new byte[30];
-				boolean retransmission = false;
+
 				while(!outThread.isInterrupted()) {
 
 					if(lock != 1) {
