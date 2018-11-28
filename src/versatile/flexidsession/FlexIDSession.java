@@ -103,6 +103,7 @@ public class FlexIDSession implements Serializable {
 		System.out.println("ReConnected.");
 		retransmission = true;
 	}
+
 	public static FlexIDSession accept() {
 		FlexIDServerSocket server = new FlexIDServerSocket(port);
 		System.out.println("Server waits a connection.");
@@ -247,6 +248,7 @@ public class FlexIDSession implements Serializable {
 				ret = true;
 				System.out.println("The IP Address is changed.");
 				while (ready == false) {}
+				System.out.println("[Rebinding] Rebinding Time Start: " + System.currentTimeMillis());
 				id.getLocator().setAddr(getLocalIpAddress());
 				changeWifiThread = new ChangeWifiThread();
 				changeWifiThread.start();
@@ -304,7 +306,7 @@ public class FlexIDSession implements Serializable {
 						lock = 1;
 					
 						if((message = getRecvMsg()) != null) {
-							
+							System.out.println("[Rebinding] Rebinding End Time: " + System.currentTimeMillis());
 							byte[] header = getHeader(message); // length(2B) + connID(20B) + seq(4B), ack(4B)
 							byte[] data = getData(message);
 							byte[] msgConnID = Arrays.copyOfRange(header, 2, 22);
@@ -363,43 +365,39 @@ public class FlexIDSession implements Serializable {
 				byte[] message = new byte[30];
 
 				while(!outThread.isInterrupted()) {
+					//checkAddress();	// TODO
+					/* if ip changed, creates new FlexIDSocket, connects,
+					   and retransmits the last message if necessary(stop-and-wait)   */
+					if(retransmission == true) {
+						// System.out.println("Retransmission is true.");
+						// System.out.println("Message: " + new String(message));
+						socket.write(message); // stop-and-wait
+						//lock = 0;
+						retransmission = false;
+						continue;
+					}
 
-					if(lock != 1) {
-						lock = 1;
+					//System.out.println("recvACK: " + recvACK + "  sentSEQ: " + sentSEQ);
+					if((recvACK != (sentSEQ+1)) && (sentSEQ != 0)) {
+						//lock = 0;
+						continue;
+					}
 
-						//checkAddress();	// TODO
-						/* if ip changed, creates new FlexIDSocket, connects,
-						   and retransmits the last message if necessary(stop-and-wait)   */ 
-						if(retransmission == true) {
-							socket.write(message); // stop-and-wait
-							lock = 0;
-							continue;
-						}
+					if(checkMsgToSend() == 1) {
+						//lock = 1;
+						byte[] data = new byte[2048];
+						int dataLen = wbuf.read(data);
+						System.out.println("Messages to be sent: " + dataLen);
+						data = Arrays.copyOfRange(data, 0, dataLen);
 
-						//System.out.println("recvACK: " + recvACK + "  sentSEQ: " + sentSEQ);
-						if((recvACK != (sentSEQ+1)) && (sentSEQ != 0)) {
-							lock = 0;
-							continue;
-						}
+						byte[] header = setHeader(data);
+						message = new byte[30 + data.length];
 
-						if(checkMsgToSend() == 1) {
-							lock = 1;
-							byte[] data = new byte[2048];
-							int dataLen = wbuf.read(data);
-							System.out.println("Messages to be sent: " + dataLen);
-							data = Arrays.copyOfRange(data, 0, dataLen);
-							
-							byte[] header = setHeader(data);
-							message = new byte[30 + data.length];
-							
-							System.arraycopy(header, 0, message, 0, 30);
-							System.arraycopy(data, 0, message, 30, data.length);
-	//						System.out.println("MSG: ");
-	//						Conversion.byteToAscii(message);
-							socket.write(message);
-						}
-
-						lock = 0;
+						System.arraycopy(header, 0, message, 0, 30);
+						System.arraycopy(data, 0, message, 30, data.length);
+//						System.out.println("MSG: ");
+//						Conversion.byteToAscii(message);
+						socket.write(message);
 					}
 				}
 			} catch (Exception e) {
