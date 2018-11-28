@@ -3,9 +3,11 @@ package versatile.flexidsession;
 import versatile.flexid.FlexID;
 
 import java.net.*;
+import java.util.Enumeration;
 
 public class FlexIDServerSocket {
 	private ServerSocket server;
+	private FlexIDSocket socket;
 	
 	FlexIDServerSocket() {
 		try {
@@ -21,14 +23,11 @@ public class FlexIDServerSocket {
 			e.printStackTrace();
 		}
 	}
-	String FlexIDToIPAddress(FlexID address) {
-		String addr = "127.0.0.1"; // Get the IP address from a FlexIDManager.
-		return addr;
-	}
+
 	FlexIDSocket accept() {
 		try {
 			Socket sock = server.accept();
-			FlexIDSocket socket = new FlexIDSocket(sock);
+			socket = new FlexIDSocket(sock);
 			System.out.println("Accept success.");
 			return socket;	
 			
@@ -53,8 +52,8 @@ public class FlexIDServerSocket {
 		}
 	}
 
-	public InetAddress getInetAddress() {
-		return server.getInetAddress();
+	public String getInetAddress() {
+		return "147.46.216.213";
 	}
 
 	public int getPort() {

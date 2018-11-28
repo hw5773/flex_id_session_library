@@ -1,10 +1,16 @@
 package versatile.flexidsession;
 
+import org.json.JSONObject;
 import versatile.flexid.*;
 
+import javax.naming.Context;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.Socket;
 import java.net.SocketException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -24,14 +30,17 @@ public class FlexIDSession implements Serializable {
 	private FlexID SFID; // source FlexID
 	private FlexID DFID; // destination FlexID
 	private byte[] connID;
-	
+
+	private int server;
+	private boolean changed = false;
+	private boolean ready = false;
+
 	// managed at the inbound, outbound function.
 	private int sentSEQ; // SEQ of my data
 	private int recvACK;
 	private int recvSEQ; 
 	private int sentACK; // send ACK for receiving data
-	
-	
+
 	private CircularQueue rbuf;
 	private CircularQueue wbuf;
 
@@ -44,10 +53,17 @@ public class FlexIDSession implements Serializable {
 		DFID = dFID;
 
 		try {
-			MessageDigest sh = MessageDigest.getInstance("SHA-256");
+			MessageDigest sh = MessageDigest.getInstance("SHA-1");
 			sh.update(sFID.getIdentity());
 			sh.update(dFID.getIdentity());
 			connID = sh.digest();
+			System.out.println("ConnID: ");
+			for (int i=0; i<connID.length; i++) {
+				if (i == 10)
+					System.out.println("");
+				System.out.print(connID[i]);
+			}
+			System.out.println("");
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
@@ -57,10 +73,13 @@ public class FlexIDSession implements Serializable {
 		
 		rbuf = new CircularQueue();
 		wbuf = new CircularQueue();
-		if(sock != null)
+		if(sock != null) {
 			socket = sock;
-		else
+			server = 1;
+		} else {
 			socket = new FlexIDSocket(DFID);
+			server = 0;
+		}
 		
 		inThread = new Thread(new inbound());
 		inThread.setDaemon(true);
@@ -73,17 +92,14 @@ public class FlexIDSession implements Serializable {
 	public FlexIDSession(FlexID sFID, FlexID dFID) {
 		this(sFID, dFID, null);
 	}
-	public static void mobility() {
+	public void mobility() {
 		port = 3336; // change port.
 		FlexIDServerSocket server = new FlexIDServerSocket(port);
 		System.out.println("Server waits a reconnection.");
-		FlexIDSocket sock = server.accept();
-		if(sock == null) {
-			System.out.println("accept failed.");
-		}
-		else {
-			System.out.println("ReConnected.");
-		}
+		// socket.close();
+
+		socket = server.accept();
+		System.out.println("ReConnected.");
 	}
 	public static FlexIDSession accept() {
 		FlexIDServerSocket server = new FlexIDServerSocket(port);
@@ -97,15 +113,15 @@ public class FlexIDSession implements Serializable {
 		System.out.println("Connected.");
 
 		FlexID sFID = new FlexID();
-		Locator sLoc = new Locator(InterfaceType.WIFI, sock.getInetAddress().toString(), sock.getPort());
-		System.out.println("Source IP Address: " + sock.getInetAddress().toString() + " / Port: " + sock.getPort());
-		sFID.setIdentity("5555".getBytes());
+		Locator sLoc = new Locator(InterfaceType.WIFI, sock.getInetAddress(), sock.getPort());
+		System.out.println("Source IP Address: " + sock.getInetAddress() + "  Port: " + sock.getPort());
+		sFID.setIdentity("0x5555".getBytes());
 		sFID.setLocator(sLoc);
 
 		FlexID dFID = new FlexID();
-		Locator dLoc = new Locator(InterfaceType.ETH, server.getInetAddress().toString(), server.getPort());
-		System.out.println("Destination IP Address: " + server.getInetAddress().toString() + " / Port: " + server.getPort());
-		dFID.setIdentity("1111".getBytes());
+		Locator dLoc = new Locator(InterfaceType.ETH, server.getInetAddress(), server.getPort());
+		System.out.println("Destination IP Address: " + server.getInetAddress() + "  Port: " + server.getPort());
+		dFID.setIdentity("0x1111".getBytes());
 		dFID.setLocator(dLoc);
 
 		return new FlexIDSession(sFID, dFID, sock);
@@ -150,20 +166,67 @@ public class FlexIDSession implements Serializable {
 	// Polling: To get msg from socket. Then write to the rbuf.
 	public byte[] getRecvMsg() {
 		try {
+			System.out.println("getRecvMsg()");
 			byte[] message = socket.read(); // is it block?
 			
-			if(message != null) return message;
+			if(message != null) {
+				System.out.println("Received) " + message.length + "  sentSEQ) " + sentSEQ + "  sentACK) " + sentACK + "  recvSEQ) " + recvSEQ + "  recvACK) " + recvACK);
+				return message;
+			}
 		} catch (Exception e) {
+			System.out.println("error in getRecvMsg()");
 			e.printStackTrace();
 //			System.exit(0);
 		}
-		
+
+		System.out.println("Received) -1");
 		return null;
 	}
 
+	class ChangeWifiThread extends Thread {
+		boolean complete = false;
+		Socket socket = null;
+		@Override
+		public void run() {
+			try {
+				System.out.println("[FlexIDSession] Try to access IP: " + DFID.getLocator().getAddr() + "  Port: " + 3334);
+
+				while (socket == null)
+					socket = new Socket(DFID.getLocator().getAddr(), 3334);
+
+				while (complete == false) {
+					BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+					PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+					JSONObject request = new JSONObject();
+					request.put("flex_id", new String(SFID.getIdentity()));
+					request.put("status", "changed");
+
+					out.println(request);
+
+					JSONObject response = new JSONObject(input.readLine());
+					String flex_id = response.getString("flex_id");
+					String ip = response.getString("ip");
+					int port = response.getInt("port");
+
+					System.out.println("[FlexIDSession] Received from Signal Server) ID: " + flex_id + " / ip: " + ip + " / port: " + port);
+					Locator locator = new Locator(InterfaceType.WIFI, ip, port);
+					DFID.setLocator(locator);
+					changed = true;
+					complete = true;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	private class MobilityManager {
+		ChangeWifiThread changeWifiThread;
+
 		boolean checkAddress(FlexID id) {
-			boolean ret = false;
+			boolean ret;
+
 			String ip = "";
 
 			while (ip.equals("")) {
@@ -174,11 +237,14 @@ public class FlexIDSession implements Serializable {
 			System.out.println("Current IP Address: " + ip);
 
 			if (id.getLocator().getAddr().equals(ip)) {
-				ret = true;
+				ret = false;
 				System.out.println("The IP Address is not changed.");
 			} else {
-				ret = false;
+				ret = true;
 				System.out.println("The IP Address is changed.");
+				while (ready == false) {}
+				changeWifiThread = new ChangeWifiThread();
+				changeWifiThread.start();
 			}
 
 			return ret;
@@ -216,8 +282,16 @@ public class FlexIDSession implements Serializable {
 			try {
 				while(!inThread.isInterrupted()) {
 
-					if (mm.checkAddress(SFID)) {
+					if (server == 0 && mm.checkAddress(SFID)) {
+						while (changed == false) {}
+						System.out.println("[FlexIDSession] We are going to access to " + DFID.getLocator().getAddr() + ":" + DFID.getLocator().getPort());
 						socket = new FlexIDSocket(DFID);
+						if (socket != null) {
+							System.out.println("[FlexIDSession] Connect Success");
+						} else {
+							System.out.println("[FlexIDSession] Connect Failure");
+						}
+						changed = false;
 					}
 
 					byte[] message;
@@ -251,7 +325,7 @@ public class FlexIDSession implements Serializable {
 								byte[] ACKmessage = setHeader(null);
 //								System.out.println("Wait for sending ACK (2s)");
 //								Thread.sleep(2000);
-								System.out.println("Send ACK message #: " + sentACK);
+								System.out.println("Send ACK message #: " + sentACK + " to " + DFID.getLocator().getAddr());
 								
 //								Conversion.byteToAscii(ACKmessage);
 								socket.write(ACKmessage);
@@ -283,10 +357,11 @@ public class FlexIDSession implements Serializable {
 			try {
 				byte[] message = new byte[30];
 				boolean retransmission = false;
-				while(!outThread.isInterrupted()) {					
+				while(!outThread.isInterrupted()) {
+
 					if(lock != 1) {
 						lock = 1;
-											
+
 						//checkAddress();	// TODO
 						/* if ip changed, creates new FlexIDSocket, connects,
 						   and retransmits the last message if necessary(stop-and-wait)   */ 
@@ -295,16 +370,18 @@ public class FlexIDSession implements Serializable {
 							lock = 0;
 							continue;
 						}
+
+						//System.out.println("recvACK: " + recvACK + "  sentSEQ: " + sentSEQ);
 						if((recvACK != (sentSEQ+1)) && (sentSEQ != 0)) {
 							lock = 0;
 							continue;
 						}
-						
+
 						if(checkMsgToSend() == 1) {
 							lock = 1;
-							System.out.println("send wbuf msg to socket");
 							byte[] data = new byte[2048];
 							int dataLen = wbuf.read(data);
+							System.out.println("Messages to be sent: " + dataLen);
 							data = Arrays.copyOfRange(data, 0, dataLen);
 							
 							byte[] header = setHeader(data);
@@ -316,7 +393,7 @@ public class FlexIDSession implements Serializable {
 	//						Conversion.byteToAscii(message);
 							socket.write(message);
 						}
-						
+
 						lock = 0;
 					}
 				}
@@ -379,7 +456,13 @@ public class FlexIDSession implements Serializable {
 	}
 	
 	public void close() {
-		socket.close();
+		try {
+			inThread.join();
+			outThread.join();
+			socket.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	public FlexID getSFID() {
 		return SFID;
@@ -392,6 +475,14 @@ public class FlexIDSession implements Serializable {
 	}
 	public void setDFID(FlexID dFID) {
 		DFID = dFID;
+	}
+
+	public byte[] getConnID() {
+		return connID;
+	}
+
+	public void setReady(boolean ready) {
+		this.ready = ready;
 	}
 }
 

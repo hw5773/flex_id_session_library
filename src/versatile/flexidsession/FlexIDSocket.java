@@ -2,6 +2,8 @@ package versatile.flexidsession;
 
 import java.io.*;
 import java.net.*;
+import java.util.Enumeration;
+
 import versatile.flexid.FlexID;
 
 public class FlexIDSocket {
@@ -44,6 +46,7 @@ public class FlexIDSocket {
 				return msg;
 			}
 		} catch (Exception e) {
+			System.out.println("error in read()");
 			e.printStackTrace();
 //			System.exit(0);
 		}
@@ -98,8 +101,12 @@ public class FlexIDSocket {
 		}
 	}
 
-	public InetAddress getInetAddress() {
-		return socket.getInetAddress();
+	public String getInetAddress() {
+		String ip = "";
+
+		ip = socket.getInetAddress().getHostAddress();
+
+		return ip;
 	}
 
 	public int getPort() {

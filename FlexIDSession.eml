@@ -3,4 +3,7 @@
 	<output-test url="file://$MODULE_DIR$/out/test/FlexIDSession"/>
 	<exclude-output/>
 	<contentEntry url="file://$MODULE_DIR$"/>
+	<lib name="java-json.jar" scope="COMPILE">
+		<srcroot url="jar://$MODULE_DIR$/../FogOSServer/java-json.jar!/"/>
+	</lib>
 </component>
