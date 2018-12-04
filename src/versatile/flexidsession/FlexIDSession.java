@@ -365,7 +365,6 @@ public class FlexIDSession implements Serializable {
 				byte[] message = new byte[30];
 
 				while(!outThread.isInterrupted()) {
-					//checkAddress();	// TODO
 					/* if ip changed, creates new FlexIDSocket, connects,
 					   and retransmits the last message if necessary(stop-and-wait)   */
 					if(retransmission == true) {
