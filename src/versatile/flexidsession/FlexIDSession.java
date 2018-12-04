@@ -98,9 +98,9 @@ public class FlexIDSession {
 	}
 
 	public static FlexIDSession accept() {
-		FlexIDServerSocket server = new FlexIDServerSocket(port);
+		FlexIDServerSocket server_sock = new FlexIDServerSocket(port);
 		System.out.println("Server waits a connection.");
-		FlexIDSocket sock = server.accept();
+		FlexIDSocket sock = server_sock.accept();
 		if(sock == null) {
 			System.out.println("accept failed.");
 			return null;
@@ -115,8 +115,8 @@ public class FlexIDSession {
 		sFID.setLocator(sLoc);
 
 		FlexID dFID = new FlexID();
-		Locator dLoc = new Locator(InterfaceType.ETH, server.getInetAddress(), server.getPort());
-		System.out.println("Destination IP Address: " + server.getInetAddress() + "  Port: " + server.getPort());
+		Locator dLoc = new Locator(InterfaceType.ETH, server_sock.getInetAddress(), server_sock.getPort());
+		System.out.println("Destination IP Address: " + server_sock.getInetAddress() + "  Port: " + server_sock.getPort());
 		dFID.setIdentity("0x1111".getBytes());
 		dFID.setLocator(dLoc);
 
@@ -298,7 +298,7 @@ public class FlexIDSession {
 							
 							if(!Arrays.equals(connID, msgConnID)) {
 								System.out.println("connID unmatched.");
-								lock = 0;
+//								lock = 0;
 								continue;
 							}
 							
@@ -307,7 +307,7 @@ public class FlexIDSession {
 							int msgAck = Conversion.byte4ToInt(Arrays.copyOfRange(header, 26, 30));
 							
 							if(length > 30) { // received data message.
-								if(sentACK < msgSeq) {
+								if(sentACK <= msgSeq) {
 									recvSEQ = msgSeq;
 									sentACK = msgSeq+1;
 									rbuf.write(data);
@@ -346,7 +346,7 @@ public class FlexIDSession {
 				while(!outThread.isInterrupted()) {
 
 					if(retransmission == true) {
-						socket.write(message); // stop-and-wait
+						socket.write(message); // retransmit the last sent message to handle unreceived ACK.
 						retransmission = false;
 						continue;
 					}
