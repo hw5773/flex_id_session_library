@@ -17,13 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Enumeration;
 
-/**
- * FlexID socket
- * @author mckwak
- */
-public class FlexIDSession implements Serializable {
-	// mckwak: getter/setter, Serializable interface
-	private static final long serialVersionUID = 1L;
+public class FlexIDSession {
 	private static int port = 3335;
 	int lock = 0;
 
@@ -97,7 +91,6 @@ public class FlexIDSession implements Serializable {
 		port = 3337; // change port.
 		FlexIDServerSocket server = new FlexIDServerSocket(port);
 		System.out.println("Server waits a reconnection.");
-		// socket.close();
 
 		socket = server.accept();
 		System.out.println("ReConnected.");
@@ -135,12 +128,9 @@ public class FlexIDSession implements Serializable {
 		int mLen;
 
 		if((mLen = wbuf.write(msg)) < 0) {
-			System.out.println("mLen: " + mLen);
-			lock = 0;
 			return -1;
 		}
 		else {
-			lock = 0;
 			return mLen;
 		}
 	}
@@ -149,11 +139,9 @@ public class FlexIDSession implements Serializable {
 		int bLen = rbuf.read(b);
 		
 		if(b == null) {
-			lock = 0;
 			return -1;
 		}
 		else {
-			lock = 0;
 			return bLen; 
 		}
 	}
@@ -169,22 +157,19 @@ public class FlexIDSession implements Serializable {
 	// Polling: To get msg from socket. Then write to the rbuf.
 	public byte[] getRecvMsg() {
 		try {
-			//System.out.println("getRecvMsg()");
             byte[] message = null;
+            
             if (socket != null)
-			    message = socket.read(); // is it block?
-			
+			    message = socket.read();
+            
 			if(message != null) {
 				System.out.println("Received) " + message.length + "  sentSEQ) " + sentSEQ + "  sentACK) " + sentACK + "  recvSEQ) " + recvSEQ + "  recvACK) " + recvACK);
 				return message;
 			}
 		} catch (Exception e) {
-			//System.out.println("error in getRecvMsg()");
 			e.printStackTrace();
-//			System.exit(0);
 		}
 
-		//System.out.println("Received) -1");
 		return null;
 	}
 
@@ -302,8 +287,8 @@ public class FlexIDSession implements Serializable {
 					}
 
 					byte[] message;
-					if(lock != 1) {
-						lock = 1;
+//					if(lock != 1) {
+//						lock = 1;
 					
 						if((message = getRecvMsg()) != null) {
 							System.out.println("[Rebinding] Rebinding End Time: " + System.currentTimeMillis());
@@ -330,13 +315,10 @@ public class FlexIDSession implements Serializable {
 									
 								// send ACK message.
 								byte[] ACKmessage = setHeader(null);
-//								System.out.println("Wait for sending ACK (2s)");
-//								Thread.sleep(2000);
+
 								System.out.println("Send ACK message #: " + sentACK + " to " + DFID.getLocator().getAddr());
-								
-//								Conversion.byteToAscii(ACKmessage);
+						
 								socket.write(ACKmessage);
-//								System.out.println("ACK write done.");
 							}
 							else { // received ACK message.
 								System.out.println("Received ACK message");
@@ -345,17 +327,14 @@ public class FlexIDSession implements Serializable {
 								}
 							}
 						}
-						lock = 0;
-					}
+//						lock = 0;
+//					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-//				System.exit(0);
 			} finally {
-				lock = 0;
+//				lock = 0;
 			}
-
-			System.out.println("inThread done.");
 		}
 	}
 		
@@ -365,25 +344,18 @@ public class FlexIDSession implements Serializable {
 				byte[] message = new byte[30];
 
 				while(!outThread.isInterrupted()) {
-					/* if ip changed, creates new FlexIDSocket, connects,
-					   and retransmits the last message if necessary(stop-and-wait)   */
+
 					if(retransmission == true) {
-						// System.out.println("Retransmission is true.");
-						// System.out.println("Message: " + new String(message));
 						socket.write(message); // stop-and-wait
-						//lock = 0;
 						retransmission = false;
 						continue;
 					}
 
-					//System.out.println("recvACK: " + recvACK + "  sentSEQ: " + sentSEQ);
 					if((recvACK != (sentSEQ+1)) && (sentSEQ != 0)) {
-						//lock = 0;
 						continue;
 					}
 
 					if(checkMsgToSend() == 1) {
-						//lock = 1;
 						byte[] data = new byte[2048];
 						int dataLen = wbuf.read(data);
 						System.out.println("Messages to be sent: " + dataLen);
@@ -394,19 +366,13 @@ public class FlexIDSession implements Serializable {
 
 						System.arraycopy(header, 0, message, 0, 30);
 						System.arraycopy(data, 0, message, 30, data.length);
-//						System.out.println("MSG: ");
-//						Conversion.byteToAscii(message);
+
 						socket.write(message);
 					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-//				System.exit(0);
-			} finally {
-				lock = 0;
-			}
-			
-			System.out.println("outThread done.");
+			} 
 		}
 	}
 	
@@ -431,7 +397,6 @@ public class FlexIDSession implements Serializable {
 			
 			if(message == null) { // ack 
 				msgLength = 30;
-//				System.out.println("ACK: " + sentACK);
 				ack = Conversion.int32ToByteArray(sentACK);
 				
 			}

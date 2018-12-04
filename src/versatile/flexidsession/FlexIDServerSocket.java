@@ -28,8 +28,7 @@ public class FlexIDServerSocket {
 		try {
 			Socket sock = server.accept();
 			socket = new FlexIDSocket(sock);
-			System.out.println("Accept success.");
-			return socket;	
+			return socket;
 			
 		} catch (Exception e) {
 			e.printStackTrace();

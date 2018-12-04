@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="D:/IntelliJ/FlexID/out/artifacts/FlexID_jar/FlexID.jar"/>
-	<classpathentry kind="lib" path="D:/IntelliJ/FogOSServer/java-json.jar" sourcepath="D:/IntelliJ/FogOSServer/java-json.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Junghwan/git/fogos_server/flexid.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Junghwan/git/fogos_server/java-json.jar" sourcepath="D:/IntelliJ/FogOSServer/java-json.jar"/>
 	<classpathentry kind="output" path="out/production/FlexIDSession"/>
 </classpath>

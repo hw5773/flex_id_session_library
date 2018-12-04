@@ -63,8 +63,6 @@ public class CircularQueue {
 			size = currentSize;
 		}
 		
-//		System.out.println("size in buf: " + currentSize);
-		
 		if(currentSize == 0) {
 			return -1;
 		}
