@@ -8,6 +8,7 @@ import java.util.Enumeration;
 public class FlexIDServerSocket {
 	private ServerSocket server;
 	private FlexIDSocket socket;
+	private String serverIp = "147.46.216.213";
 	
 	FlexIDServerSocket() {
 		try {
@@ -52,7 +53,8 @@ public class FlexIDServerSocket {
 	}
 
 	public String getInetAddress() {
-		return "147.46.216.213";
+		return server.getInetAddress().getHostAddress();
+//		return serverIp;
 	}
 
 	public int getPort() {

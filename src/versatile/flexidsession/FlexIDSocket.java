@@ -30,7 +30,7 @@ public class FlexIDSocket {
 		try {
 			socket = sock;
 			dIn = new DataInputStream(socket.getInputStream());
-			dOut = new DataOutputStream(socket.getOutputStream());		
+			dOut = new DataOutputStream(socket.getOutputStream());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -48,7 +48,6 @@ public class FlexIDSocket {
 		} catch (Exception e) {
 			System.out.println("error in read()");
 			e.printStackTrace();
-//			System.exit(0);
 		}
 		return null;
 	}
@@ -102,11 +101,7 @@ public class FlexIDSocket {
 	}
 
 	public String getInetAddress() {
-		String ip = "";
-
-		ip = socket.getInetAddress().getHostAddress();
-
-		return ip;
+		return socket.getInetAddress().getHostAddress();
 	}
 
 	public int getPort() {
