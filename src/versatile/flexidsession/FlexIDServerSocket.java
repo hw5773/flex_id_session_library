@@ -1,14 +1,10 @@
 package versatile.flexidsession;
 
-import versatile.flexid.FlexID;
-
 import java.net.*;
-import java.util.Enumeration;
 
 public class FlexIDServerSocket {
 	private ServerSocket server;
 	private FlexIDSocket socket;
-	private String serverIp = "147.46.216.213";
 	
 	FlexIDServerSocket() {
 		try {

@@ -27,7 +27,7 @@ public class FlexIDSession {
 	private boolean changed = false;
 	private boolean ready = false;
     private boolean retransmission = false;
-    private boolean sourceChange = false;
+    private boolean sourceChanged = false;
 
 	// variables to manage data sequence at the inbound & outbound function.
 	private int sentSEQ = 0; // SEQ of my data
@@ -84,9 +84,9 @@ public class FlexIDSession {
 	}
 	
 	public static FlexIDSession accept() {
-		FlexIDServerSocket server_sock = new FlexIDServerSocket(port);
+		FlexIDServerSocket server = new FlexIDServerSocket(port);
 		System.out.println("Server waits a connection.");
-		FlexIDSocket sock = server_sock.accept();
+		FlexIDSocket sock = server.accept();
 		if(sock == null) {
 			System.out.println("accept failed.");
 			return null;
@@ -101,8 +101,8 @@ public class FlexIDSession {
 		sFID.setLocator(sLoc);
 
 		FlexID dFID = new FlexID();
-		Locator dLoc = new Locator(InterfaceType.ETH, server_sock.getInetAddress(), server_sock.getPort());
-		System.out.println("Destination IP Address: " + server_sock.getInetAddress() + "  Port: " + server_sock.getPort());
+		Locator dLoc = new Locator(InterfaceType.ETH, server.getInetAddress(), server.getPort());
+		System.out.println("Destination IP Address: " + server.getInetAddress() + "  Port: " + server.getPort());
 		dFID.setIdentity("0x1111".getBytes());
 		dFID.setLocator(dLoc);
 
@@ -135,13 +135,14 @@ public class FlexIDSession {
 							
 							changed = false;
 						}
-						else if (sourceChange) { // When source changed
+						else if (sourceChanged) { // When source changed
 							while (changed == false) {}
 							System.out.println("[FlexIDSession] We are going to access to " + DFID.getLocator().getAddr() + ":" + DFID.getLocator().getPort());
 							
 							createConnection(null);
 							
 							changed = false;
+							sourceChanged = false;
 						}
 					}
 					
@@ -296,35 +297,6 @@ public class FlexIDSession {
 		System.arraycopy(message, 30, data, 0, dataLength);
 		return data;
 	}
-	
-	public void close() {
-		try {
-			inThread.join();
-			outThread.join();
-			socket.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public FlexID getSFID() {
-		return SFID;
-	}
-	public void setSFID(FlexID sFID) {
-		this.SFID = sFID;
-	}
-	public FlexID getDFID() {
-		return DFID;
-	}
-	public void setDFID(FlexID dFID) {
-		this.DFID = dFID;
-	}
-	public byte[] getConnID() {
-		return connID;
-	}
-	public void setReady(boolean ready) {
-		this.ready = ready;
-	}
 
 	/* Connect to peer's signal server and rebuild/terminate a session */
 	class ConnectToSignalServerThread extends Thread {
@@ -446,7 +418,7 @@ public class FlexIDSession {
 	/* Client function */
 	public int changeContentSource(String ip, int port) {
 		try {
-			sourceChange = true;
+			sourceChanged = true;
 			ConnectToSignalServerThread connectToSignalServerThread = new ConnectToSignalServerThread("terminate"); // terminate old session
 			Locator locator = new Locator(InterfaceType.WIFI, ip, port);
 			FlexID newDFID = new FlexID();
@@ -462,6 +434,34 @@ public class FlexIDSession {
 		}
 	}
 	
+	public void close() {
+		try {
+			inThread.join();
+			outThread.join();
+			socket.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public FlexID getSFID() {
+		return SFID;
+	}
+	public void setSFID(FlexID sFID) {
+		this.SFID = sFID;
+	}
+	public FlexID getDFID() {
+		return DFID;
+	}
+	public void setDFID(FlexID dFID) {
+		this.DFID = dFID;
+	}
+	public byte[] getConnID() {
+		return connID;
+	}
+	public void setReady(boolean ready) {
+		this.ready = ready;
+	}
 }
 
 

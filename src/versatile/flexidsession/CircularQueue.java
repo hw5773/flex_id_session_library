@@ -63,6 +63,8 @@ public class CircularQueue {
 			size = currentSize;
 		}
 		
+		
+		
 		if(currentSize == 0) {
 			return -1;
 		}

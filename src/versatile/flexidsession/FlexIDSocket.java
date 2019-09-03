@@ -2,7 +2,6 @@ package versatile.flexidsession;
 
 import java.io.*;
 import java.net.*;
-import java.util.Enumeration;
 
 import versatile.flexid.FlexID;
 
