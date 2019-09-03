@@ -252,6 +252,13 @@ public class FlexIDSession {
 			} 
 		}
 	}
+    // Check wbuf to send msg to socket.
+    public int checkMsgToSend() {
+        if(wbuf.isEmpty(1)) {
+            return -1;
+        }
+        else return 1;
+    }
 	
 	public byte[] getHeader(byte[] message) {
 		return Arrays.copyOfRange(message, 0, 30);
